@@ -138,6 +138,19 @@ async def get_recent_items(user: str, limit: int = 10):
     except Exception as e:
         return {"error": f"無法取得使用者 '{user}' 的最近交易物品", "details": str(e)}
 
+@router.get("/get-all-items")
+async def get_all_items():
+    try:
+        db = await get_database()
+        collections = await db.list_collection_names()
+        item_collections = [col for col in collections if col not in ["Trade-History"] and not col.startswith("user_")]
+        return {
+            "total_items": len(item_collections),
+            "items": item_collections
+        }
+    except Exception as e:
+        return {"error": "無法取得所有物品清單", "details": str(e)}
+
 @router.get("/most-freq-trade")
 async def get_most_frequent_trades(target: str, limit: int = 10):
     try:
