@@ -4,7 +4,7 @@ beanie
 bcrypt
 python-dotenv
 pymongo
-motor
 pydantic[email]
+slowapi
 numpy
 openai
