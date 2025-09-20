@@ -197,18 +197,13 @@ async def get_most_frequent_trades(target: str = "", limit: int = -1):
             trade_history_collection = db["Trade-History"]
             pipeline = [
                 {"$project": {
-                    "pair": {
-                        "$cond": [
-                            {"$lt": ["$item_a", "$item_b"]},
-                            ["$item_a", "$item_b"],
-                            ["$item_b", "$item_a"]
-                        ]
-                    },
+                    "item": ["$item_a", "$item_b"],
                     "rate": {"$divide": ["$quantity_b", "$quantity_a"]},
                     "timestamp": "$timestamp"
                 }},
+                {"$unwind": "$item"},
                 {"$group": {
-                    "_id": "$pair",
+                    "_id": "$item",
                     "count": {"$sum": 1},
                     "rates": {"$push": "$rate"},
                     "timestamps": {"$push": "$timestamp"}
@@ -221,9 +216,9 @@ async def get_most_frequent_trades(target: str = "", limit: int = -1):
 
             cursor = trade_history_collection.aggregate(pipeline)
             aggregation_results = await cursor.to_list(length=None)
-            trade_pairs = []
+            trade_items = []
             for result in aggregation_results:
-                item1, item2 = result["_id"]
+                item = result["_id"]
                 count = result["count"]
                 historical_rates = result.get("rates", [])
                 historical_avg = sum(historical_rates) / len(historical_rates) if historical_rates else 0.0
@@ -232,16 +227,15 @@ async def get_most_frequent_trades(target: str = "", limit: int = -1):
                     "historical_min": min(historical_rates) if historical_rates else 0.0,
                     "historical_max": max(historical_rates) if historical_rates else 0.0
                 }
-                trade_pair = {
-                    "item_a": item1,
-                    "item_b": item2,
+                trade_item = {
+                    "item": item,
                     "count": count,
                     "rate_statistics": rate_stats
                 }
-                trade_pairs.append(trade_pair)
+                trade_items.append(trade_item)
             return {
-                "total_pairs": len(trade_pairs),
-                "trade_pairs": trade_pairs
+                "total_items": len(trade_items),
+                "trade_items": trade_items
             }
     except Exception as e:
         return {
