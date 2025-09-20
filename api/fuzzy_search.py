@@ -9,6 +9,7 @@ import numpy as np
 from fastapi import APIRouter, Query, HTTPException
 from dotenv import load_dotenv
 from openai import OpenAI
+from core.cache import cache
 
 load_dotenv()
 
@@ -109,6 +110,7 @@ def _fuzzy_search_core(query: str, items: List[str], top_k: int, min_score: floa
 
 # ---- API route (GET) --------------------------------------------------------
 @router.get("/fuzzy-search")
+@cache(ttl=600, key_prefix="search:fuzzy")
 async def fuzzy_search(
     q: str = Query(..., description="使用者查詢字串（語意模糊搜尋）"),
     top_k: int = Query(10, ge=1, le=100, description="取前 K 筆"),
