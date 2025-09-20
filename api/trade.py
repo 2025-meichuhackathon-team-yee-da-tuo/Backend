@@ -98,7 +98,7 @@ async def get_collections():
         return {"error": "無法取得集合清單", "details": str(e)}
 
 @router.get("/trade-history")
-async def get_trade_history(target: str = "", user: str = "", limit: int = 10):
+async def get_trade_history(target: str = "", user: str = "", limit: int = -1):
     try:
         db = await get_database()
         if target != "":
@@ -107,7 +107,7 @@ async def get_trade_history(target: str = "", user: str = "", limit: int = 10):
             trade_history_collection = db[user]
         else:
             trade_history_collection = db["Trade-History"]
-        cursor = trade_history_collection.find().sort("timestamp", -1).limit(limit)
+        cursor = trade_history_collection.find().sort("timestamp", -1).limit(limit) if limit > 0 else trade_history_collection.find().sort("timestamp", -1)
         trades = []
         async for trade in cursor:
             trade["_id"] = str(trade["_id"])
@@ -120,11 +120,11 @@ async def get_trade_history(target: str = "", user: str = "", limit: int = 10):
         return {"error": "無法取得交易歷史", "details": str(e)}
 
 @router.get("/recent-items")
-async def get_recent_items(user: str, limit: int = 10):
+async def get_recent_items(user: str, limit: int = -1):
     try:
         db = await get_database()
         user_collection = db[user]
-        cursor = user_collection.find().sort("timestamp", -1).limit(limit)
+        cursor = user_collection.find().sort("timestamp", -1).limit(limit) if limit > 0 else user_collection.find().sort("timestamp", -1)
         recent_items = []
         recent_items_set = set()
         async for trade in cursor:
