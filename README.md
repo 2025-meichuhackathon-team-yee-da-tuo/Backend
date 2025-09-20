@@ -23,14 +23,7 @@
 
 ```
 .
-├── main.py                 # 主應用程式入口，負責整合所有元件
-├── api                     # 存放所有 API 路由 (Endpoints)
-│   └── auth.py
-├── core                    # 存放核心設定，例如資料庫連線
-│   └── db.py
-├── models                  # 存放所有資料模型
-│   ├── user_model.py       # Beanie 資料庫模型 (對應 MongoDB)
-│   └── user_schema.py      # Pydantic 資料驗證模型 (用於 API)
+├── main.py                 # 主應用程式檔案，包含所有 API 邏輯
 ├── requirements.txt        # Python 套件依賴清單
 └── .env                    # (需手動建立) 環境變數檔案
 ```
@@ -69,7 +62,7 @@ pip install -r requirements.txt
 
 ### 4. 設定環境變數
 
-在專案根目錄下，手動建立一個名為 `.env` 的檔案，並填入您的 MongoDB Atlas 連線字串。
+在專案根目錄下，手動建立一個名為 `.env` 的檔案，並填入您的 MongoDB Atlas 連線字串。**此檔案與 Node.js 版本通用，無需更改。**
 
 ```
 MONGO_URI=mongodb+srv://<你的使用者名稱>:<你的密碼>@<你的cluster網址>/<你的資料庫名稱>?retryWrites=true&w=majority
@@ -88,10 +81,18 @@ uvicorn main:app --reload
 
 伺服器預設會運行在 `http://127.0.0.1:8000`。
 
-## 🔌 API 端點測試
+## 🔌 API 端點測試 (新方法！)
 
-請打開您的瀏覽器，然後前往 **[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)**
+ FastAPI 的一大優勢是它會自動為您產生互動式 API 文件。
 
-您會看到一個 Swagger UI 頁面，其中列出了我們所有的 API 端點。由於我們進行了模組化，路由現在會被分類在 `Authentication` 標籤下，並且路徑會是完整的 `/api/auth/register` 和 `/api/auth/login`。
+**請打開您的瀏覽器，然後前往 [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)**
 
-您可以直接在這個頁面上進行所有功能的測試。
+您會看到一個 Swagger UI 頁面，其中列出了我們所有的 API 端點 (`/api/auth/register` 和 `/api/auth/login`)。
+
+您可以直接在這個頁面上：
+1.  點開任一個 API 端點。
+2.  點擊 `Try it out` 按鈕。
+3.  在 `Request body` 中輸入 JSON 測試資料。
+4.  點擊 `Execute`。
+
+頁面會直接顯示伺服器的回應，**您不再需要使用 Postman** 就可以輕鬆完成所有功能的測試！

@@ -1,32 +1,23 @@
 import os
 import bcrypt
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, status
 from fastapi.responses import JSONResponse
 from beanie import init_beanie, Document
 from pydantic import BaseModel, EmailStr, Field, validator
 from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
 
-# 匯入自訂模組
-from core.db import init_db
-from api.auth import router as auth_router
-
-
-# 讀取 .env 環境變數
 load_dotenv()
 
-# --- FastAPI 應用程式實例 ---
 app = FastAPI()
 
-# --- 資料庫模型 (Beanie ODM) ---
 class User(Document):
     email: EmailStr
     password: str
 
     class Settings:
-        name = "users" # MongoDB collection 的名稱
+        name = "users"
 
-# --- API 請求的資料模型 (Pydantic) ---
 class RegisterSchema(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=8)
@@ -43,11 +34,40 @@ class LoginSchema(BaseModel):
     password: str
 
 
-# --- 資料庫連線 ---
 @app.on_event("startup")
-async def startup_event():
-    """在應用程式啟動時，初始化資料庫連線"""
-    await init_db()
+async def app_init():
+    db_client = AsyncIOMotorClient(os.getenv("MONGO_URI"))
+    await init_beanie(
+        database=db_client.get_default_database(), 
+        document_models=[User]
+    )
 
-# --- 路由掛載 ---
-app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
+
+@app.post("/api/auth/register")
+async def register_user(body: RegisterSchema):
+    if len(body.password) < 8:
+        return JSONResponse(status_code=status.HTTP_200_OK, content={"code": 2})
+
+    if body.password != body.confirmPassword:
+         return JSONResponse(status_code=status.HTTP_200_OK, content={"code": 3})
+
+    existing_user = await User.find_one(User.email == body.email)
+    if existing_user:
+        return JSONResponse(status_code=status.HTTP_200_OK, content={"code": 1})
+
+    hashed_password = bcrypt.hashpw(body.password.encode('utf-8'), bcrypt.gensalt())
+
+    new_user = User(email=body.email, password=hashed_password.decode('utf-8'))
+    await new_user.create()
+
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"code": 0})
+
+
+@app.post("/api/auth/login")
+async def login_user(body: LoginSchema):
+    user = await User.find_one(User.email == body.email)
+    
+    if not user or not bcrypt.checkpw(body.password.encode('utf-8'), user.password.encode('utf-8')):
+        return JSONResponse(status_code=status.HTTP_200_OK, content={"code": 1})
+
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"code": 0})
