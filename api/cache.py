@@ -25,7 +25,6 @@ class CacheInfoResponse(BaseModel):
 
 @router.get("/info", response_model=CacheInfoResponse)
 async def get_cache_info():
-    """取得快取資訊"""
     try:
         info = await CacheManager.get_cache_info()
         return CacheInfoResponse(
@@ -38,7 +37,6 @@ async def get_cache_info():
 
 @router.get("/get/{key}")
 async def get_cache_value(key: str):
-    """取得快取值"""
     try:
         value = await redis_client.get(key)
         if value is None:
@@ -51,7 +49,6 @@ async def get_cache_value(key: str):
 
 @router.post("/set")
 async def set_cache_value(request: CacheValueRequest):
-    """設定快取值"""
     try:
         success = await redis_client.set(request.key, request.value, expire=request.ttl)
         if success:
@@ -63,7 +60,6 @@ async def set_cache_value(request: CacheValueRequest):
 
 @router.delete("/delete/{key}")
 async def delete_cache_value(key: str):
-    """刪除快取值"""
     try:
         success = await redis_client.delete(key)
         if success:
@@ -75,7 +71,6 @@ async def delete_cache_value(key: str):
 
 @router.post("/clear-pattern")
 async def clear_cache_pattern(request: CachePatternRequest):
-    """清空符合模式的快取"""
     try:
         await CacheManager.clear_pattern(request.pattern)
         return {"pattern": request.pattern, "status": "success", "message": "快取模式清空成功"}
@@ -84,7 +79,6 @@ async def clear_cache_pattern(request: CachePatternRequest):
 
 @router.delete("/clear-all")
 async def clear_all_cache():
-    """清空所有快取"""
     try:
         await CacheManager.clear_all()
         return {"status": "success", "message": "所有快取已清空"}
@@ -93,7 +87,6 @@ async def clear_all_cache():
 
 @router.get("/keys")
 async def get_cache_keys(pattern: str = "*"):
-    """取得快取鍵列表"""
     try:
         keys = await redis_client.keys(pattern)
         return {"keys": keys, "count": len(keys), "status": "success"}
@@ -102,9 +95,7 @@ async def get_cache_keys(pattern: str = "*"):
 
 @router.get("/health")
 async def cache_health_check():
-    """快取健康檢查"""
     try:
-        # 測試 Redis 連線
         await redis_client.redis.ping()
         return {"status": "healthy", "message": "Redis 連線正常"}
     except Exception as e:

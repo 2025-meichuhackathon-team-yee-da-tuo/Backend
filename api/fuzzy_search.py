@@ -14,9 +14,9 @@ from core.cache import cache
 load_dotenv()
 
 router = APIRouter()
-EMBED_MODEL = os.getenv("SEARCH_EMBED_MODEL", "text-embedding-3-small")  # 1536 維
+EMBED_MODEL = os.getenv("SEARCH_EMBED_MODEL", "text-embedding-3-small") 
 EMBED_DIM = 1536 if EMBED_MODEL.endswith("small") else 3072
-CACHE_TTL = int(os.getenv("SEARCH_EMBED_TTL", "300"))  # 預設 5 分鐘
+CACHE_TTL = int(os.getenv("SEARCH_EMBED_TTL", "300")) 
 BATCH_SIZE = int(os.getenv("SEARCH_EMBED_BATCH", "128"))
 
 # ---- OpenAI client (sync) ---------------------------------------------------
@@ -74,7 +74,7 @@ async def _fetch_all_item_names() -> List[str]:
     呼叫 api.trade.get_all_items() 取得所有 collection 名稱，
     並以字串清單形式回傳。
     """
-    from api.trade import get_all_items  # 延遲 import，避免循環依賴
+    from api.trade import get_all_items
     res = None
     if inspect.iscoroutinefunction(get_all_items):
         res = await get_all_items()
@@ -119,7 +119,6 @@ async def fuzzy_search(
     try:
         items = await _fetch_all_item_names()
 
-        # 將同步的 OpenAI 呼叫丟到 ThreadPool，避免阻塞事件圈
         loop = asyncio.get_event_loop()
         result_list: List[str] = await loop.run_in_executor(
             None, lambda: _fuzzy_search_core(q, items, top_k, min_score)

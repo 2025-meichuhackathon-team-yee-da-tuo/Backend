@@ -33,7 +33,6 @@ async def get_database():
         mongodb_client = AsyncIOMotorClient(connection_string)
     return mongodb_client["2025-MeiChu"]
 
-# FastAPI lifespan event for startup/shutdown
 from fastapi import FastAPI
 
 def register_db_events(app: FastAPI):
