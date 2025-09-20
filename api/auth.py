@@ -9,15 +9,15 @@ router = APIRouter()
 
 @router.post("/register")
 async def register_user(body: RegisterSchema):
+    existing_user = await User.find_one(User.email == body.email)
+    if existing_user:
+        return JSONResponse(status_code=status.HTTP_200_OK, content={"code": 1})
+
     if len(body.password) < 8:
         return JSONResponse(status_code=status.HTTP_200_OK, content={"code": 2})
 
     if body.password != body.confirmPassword:
          return JSONResponse(status_code=status.HTTP_200_OK, content={"code": 3})
-
-    existing_user = await User.find_one(User.email == body.email)
-    if existing_user:
-        return JSONResponse(status_code=status.HTTP_200_OK, content={"code": 1})
 
     hashed_password = bcrypt.hashpw(body.password.encode('utf-8'), bcrypt.gensalt())
 
