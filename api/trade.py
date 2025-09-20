@@ -50,30 +50,32 @@ async def new_trade(
         user_b_collection = db[user_b]
         user_b_result = await user_b_collection.insert_one(swapped_trade_data)
         graph_manager.update_graph_from_trade(trade_data)
-        return {
-            "message": "交易建立成功，已完成三個資料庫操作",
-            "trade_details": trade_data,
-            "operations_completed": {
-                "trade_history_id": str(history_result.inserted_id),
-                "item_a_collection_id": str(item_a_result.inserted_id),
-                "user_a_collection_id": str(user_a_result.inserted_id),
-                "swapped_data_id": str(swapped_result.inserted_id),
-                "user_b_collection_id": str(user_b_result.inserted_id)
-            },
-            "database_info": {
-                "database": "2025-MeiChu",
-                "collections_used": [
-                    "Trade-History",
-                    item_a
-                ]
-            }
-        }
+        return JSONResponse(status_code=status.HTTP_200_OK, content={"code": 1})
+        # return {
+        #     "message": "交易建立成功，已完成三個資料庫操作",
+        #     "trade_details": trade_data,
+        #     "operations_completed": {
+        #         "trade_history_id": str(history_result.inserted_id),
+        #         "item_a_collection_id": str(item_a_result.inserted_id),
+        #         "user_a_collection_id": str(user_a_result.inserted_id),
+        #         "swapped_data_id": str(swapped_result.inserted_id),
+        #         "user_b_collection_id": str(user_b_result.inserted_id)
+        #     },
+        #     "database_info": {
+        #         "database": "2025-MeiChu",
+        #         "collections_used": [
+        #             "Trade-History",
+        #             item_a
+        #         ]
+        #     }
+        # }
     except Exception as e:
-        return {
-            "error": "資料庫操作失敗",
-            "details": str(e),
-            "trade_details": trade_data
-        }
+        # return {
+        #     "error": "資料庫操作失敗",
+        #     "details": str(e),
+        #     "trade_details": trade_data
+        # }
+        return JSONResponse(status_code=status.HTTP_200_OK, content={"code": 0})
 
 @router.get("/")
 async def root():
