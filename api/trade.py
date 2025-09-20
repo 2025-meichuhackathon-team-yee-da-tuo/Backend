@@ -32,9 +32,9 @@ async def new_trade(
     }
     try:
         trade_path = await find_trade_path(item_a, item_b, max_depth=5)
-        recommand_rate = trade_path.get("recommand_rate", 0.0) if trade_path else 0.0
+        recommand_rate = trade_path.get("recommand_rate") if trade_path else None
         rate = quantity_a / quantity_b if quantity_b != 0 else None
-        if rate == None or recommand_rate / rate > 1.5 or recommand_rate / rate < 0.67:
+        if recommand_rate != None and (rate == None or recommand_rate / rate > 1.5 or recommand_rate / rate < 0.67):
             return JSONResponse(status_code=status.HTTP_200_OK, content={"code": -1})
         
         db = await get_database()
