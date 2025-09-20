@@ -8,3 +8,4 @@ pydantic[email]
 slowapi
 numpy
 openai
+redis[hiredis]

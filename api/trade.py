@@ -4,10 +4,12 @@ from typing import Dict, Any
 import datetime
 from core.db import get_database
 import core.graph_manager as graph_manager
+from core.cache import cache, invalidate_cache
 
 router = APIRouter()
 
 @router.post("/new_trade")
+@invalidate_cache(pattern="trade:*")
 async def new_trade(
     user_a: str,
     item_a: str,
@@ -85,6 +87,7 @@ async def root():
     }
 
 @router.get("/collections")
+@cache(ttl=600, key_prefix="trade:collections")
 async def get_collections():
     try:
         db = await get_database()
@@ -98,6 +101,7 @@ async def get_collections():
         return {"error": "無法取得集合清單", "details": str(e)}
 
 @router.get("/trade-history")
+@cache(ttl=300, key_prefix="trade:history")
 async def get_trade_history(target: str = "", user: str = "", limit: int = -1):
     try:
         db = await get_database()
@@ -120,6 +124,7 @@ async def get_trade_history(target: str = "", user: str = "", limit: int = -1):
         return {"error": "無法取得交易歷史", "details": str(e)}
 
 @router.get("/recent-items")
+@cache(ttl=300, key_prefix="trade:recent_items")
 async def get_recent_items(user: str, limit: int = -1):
     try:
         db = await get_database()
@@ -140,6 +145,7 @@ async def get_recent_items(user: str, limit: int = -1):
         return {"error": f"無法取得使用者 '{user}' 的最近交易物品", "details": str(e)}
 
 @router.get("/get-all-items")
+@cache(ttl=600, key_prefix="trade:all_items")
 async def get_all_items():
     try:
         db = await get_database()
@@ -153,6 +159,7 @@ async def get_all_items():
         return {"error": "無法取得所有物品清單", "details": str(e)}
 
 @router.get("/most-freq-trade")
+@cache(ttl=300, key_prefix="trade:freq_trade")
 async def get_most_frequent_trades(target: str = "", limit: int = -1):
     try:
         db = await get_database()
@@ -293,6 +300,7 @@ async def get_most_frequent_pairs(limit: int = -1):
         }
 
 @router.get("/graph/path/{start_item}/{target_item}")
+@cache(ttl=600, key_prefix="trade:graph_path")
 async def find_trade_path(start_item: str, target_item: str, max_depth: int = 5):
     paths = graph_manager.find_trade_path(start_item, target_item, max_depth)
     recommand_rate = graph_manager.calculate_recommand_rate(paths)
