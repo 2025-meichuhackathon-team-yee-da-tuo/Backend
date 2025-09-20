@@ -249,6 +249,49 @@ async def get_most_frequent_trades(target: str = "", limit: int = -1):
             "trade_pairs": []
         }
 
+@router.get("/most-freq-pair")
+async def get_most_frequent_pairs(limit: int = -1):
+    """
+    回傳最熱門的交易對，A, B 以字典序較小的作為第一項，統計所有交易對出現次數並排序
+    """
+    try:
+        db = await get_database()
+        trade_history_collection = db["Trade-History"]
+        pipeline = [
+            {"$project": {
+                "pair": {
+                    "$cond": [
+                        {"$lt": ["$item_a", "$item_b"]},
+                        ["$item_a", "$item_b"],
+                        ["$item_b", "$item_a"]
+                    ]
+                }
+            }},
+            {"$group": {
+                "_id": "$pair",
+                "count": {"$sum": 1}
+            }},
+            {"$sort": {"count": -1}},
+        ]
+        if limit > 0:
+            pipeline.append({"$limit": limit})
+        cursor = trade_history_collection.aggregate(pipeline)
+        aggregation_results = await cursor.to_list(length=None)
+        pairs = [
+            {"pair": result["_id"], "count": result["count"]}
+            for result in aggregation_results
+        ]
+        return {
+            "total_pairs": len(pairs),
+            "pairs": pairs
+        }
+    except Exception as e:
+        return {
+            "error": "無法取得最熱門交易對資料",
+            "details": str(e),
+            "pairs": []
+        }
+
 @router.get("/graph/path/{start_item}/{target_item}")
 async def find_trade_path(start_item: str, target_item: str, max_depth: int = 5):
     paths = graph_manager.find_trade_path(start_item, target_item, max_depth)
