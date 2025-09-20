@@ -3,4 +3,3 @@ uvicorn[standard]
 beanie
 bcrypt
 python-dotenv
-pydantic-email
