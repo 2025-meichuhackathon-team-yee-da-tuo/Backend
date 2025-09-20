@@ -49,6 +49,7 @@ async def new_trade(
             "is_swapped": True,
             "original_trade_id": trade_data["trade_id"]
         })
+        item_b_result = await item_b_collection.insert_one(swapped_trade_data)
         
         graph_manager.update_graph_from_trade(trade_data)
         return JSONResponse(status_code=status.HTTP_200_OK, content={"code": 1})
