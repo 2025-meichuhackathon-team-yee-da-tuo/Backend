@@ -124,5 +124,4 @@ async def fuzzy_search(
         )
         return result_list
     except Exception as e:
-        # 出錯時回 500；若你想改成回空清單，也可把這行改成：return []
-        raise HTTPException(status_code=500, detail={"error": "fuzzy_search_failed", "message": str(e)})
+        return []
