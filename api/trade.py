@@ -31,6 +31,12 @@ async def new_trade(
         "trade_id": f"TRADE_{abs(hash(f'{item_a}{quantity_a}{item_b}{quantity_b}'))}"[:20]
     }
     try:
+        trade_path = await find_trade_path(item_a, item_b, max_depth=5)
+        recommand_rate = trade_path.get("recommand_rate", 0.0) if trade_path else 0.0
+        rate = quantity_a / quantity_b if quantity_b != 0 else None
+        if rate == None or recommand_rate / rate > 1.5 or recommand_rate / rate < 0.67:
+            return JSONResponse(status_code=status.HTTP_200_OK, content={"code": -1})
+        
         db = await get_database()
         trade_history_collection = db["Trade-History"]
         history_result = await trade_history_collection.insert_one(trade_data.copy())
@@ -45,7 +51,7 @@ async def new_trade(
             "quantity_a": quantity_b,
             "item_b": item_a,
             "quantity_b": quantity_a,
-            "rate": quantity_a / quantity_b if quantity_b != 0 else None,
+            "rate": rate,
             "is_swapped": True,
             "original_trade_id": trade_data["trade_id"]
         })
