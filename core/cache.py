@@ -3,10 +3,10 @@ import hashlib
 import inspect
 from functools import wraps
 from typing import Any, Callable, Optional, Union, Dict, List
-from datetime import timedelta
+from datetime import timedelta, datetime
 import json
 
-from .redis_client import redis_client
+from .redis_client import redis_client, DateTimeEncoder
 
 class CacheConfig:
     """快取配置類別"""
@@ -138,7 +138,7 @@ def cache(
                 import redis
                 r = redis.Redis.from_url(redis_client.redis_url, decode_responses=True)
                 if isinstance(result, (dict, list)):
-                    r.setex(cache_key, config.ttl, json.dumps(result, ensure_ascii=False))
+                    r.setex(cache_key, config.ttl, json.dumps(result, ensure_ascii=False, cls=DateTimeEncoder))
                 else:
                     r.setex(cache_key, config.ttl, str(result))
             except Exception as e:

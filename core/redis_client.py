@@ -2,11 +2,20 @@ import os
 import json
 import asyncio
 from typing import Any, Optional, Union, Dict, List
-from datetime import timedelta
+from datetime import timedelta, datetime
 import redis.asyncio as redis
 from dotenv import load_dotenv
 
 load_dotenv()
+
+class DateTimeEncoder(json.JSONEncoder):
+    """自定義 JSON 編碼器，處理 datetime 物件"""
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        elif hasattr(obj, '__dict__'):
+            return obj.__dict__
+        return super().default(obj)
 
 class RedisClient:
     """Redis 客戶端管理類別"""
@@ -52,7 +61,7 @@ class RedisClient:
         try:
             # 將值序列化為 JSON
             if isinstance(value, (dict, list)):
-                serialized_value = json.dumps(value, ensure_ascii=False)
+                serialized_value = json.dumps(value, ensure_ascii=False, cls=DateTimeEncoder)
             else:
                 serialized_value = str(value)
             
@@ -152,7 +161,7 @@ class RedisClient:
             serialized_mapping = {}
             for k, v in mapping.items():
                 if isinstance(v, (dict, list)):
-                    serialized_mapping[k] = json.dumps(v, ensure_ascii=False)
+                    serialized_mapping[k] = json.dumps(v, ensure_ascii=False, cls=DateTimeEncoder)
                 else:
                     serialized_mapping[k] = str(v)
             
