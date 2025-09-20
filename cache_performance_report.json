@@ -1,0 +1,28 @@
+{
+  "timestamp": "2025-09-20T23:32:02.342531",
+  "test_results": {
+    "single": {
+      "uncached": 154.77490425109863,
+      "cached_first": 15.191793441772461,
+      "cached_second": 0.24771690368652344,
+      "speedup": 624.8055822906641
+    },
+    "batch": {
+      "uncached_batch": 2859.6549034118652,
+      "cached_first_batch": 1159.6448421478271,
+      "cached_second_batch": 1.0418891906738281,
+      "batch_speedup": 2744.6823798627
+    },
+    "concurrent": {
+      "uncached_concurrent": 137.82620429992676,
+      "cached_first_concurrent": 3.003835678100586,
+      "cached_second_concurrent": 0.9779930114746094,
+      "concurrent_speedup": 140.92759629449048
+    },
+    "api": {
+      "first_call_avg": 2.699613571166992,
+      "second_call_avg": 0.7386207580566406,
+      "api_speedup": 3.654938670109748
+    }
+  }
+}
