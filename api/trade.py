@@ -153,55 +153,94 @@ async def get_all_items():
         return {"error": "無法取得所有物品清單", "details": str(e)}
 
 @router.get("/most-freq-trade")
-async def get_most_frequent_trades(target: str, limit: int = -1):
+async def get_most_frequent_trades(target: str = "", limit: int = -1):
     try:
         db = await get_database()
-        if target not in graph_manager.graph:
+        if target:
+            # 指定 target，統計該物品
+            if target not in graph_manager.graph:
+                return {
+                    "error": f"物品 '{target}' 不存在於交易圖中",
+                    "target_item": target,
+                    "trade_pairs": []
+                }
+            target_collection = db[target]
+            pipeline = [
+                {"$group": {"_id": {"$cond": [ {"$eq": ["$item_a", target]}, "$item_b", "$item_a"]}, "count": {"$sum": 1}, "rates": {"$push": {"$cond": [ {"$eq": ["$item_a", target]}, {"$divide": ["$quantity_b", "$quantity_a"]}, {"$divide": ["$quantity_a", "$quantity_b"]} ]}, }, "timestamps": {"$push": "$timestamp"} }},
+                {"$match": {"_id": {"$ne": None}}},
+                {"$sort": {"count": -1}},
+            ]
+            if limit > 0:
+                pipeline.append({"$limit": limit})
+            cursor = target_collection.aggregate(pipeline)
+            aggregation_results = await cursor.to_list(length=None)
+            trade_pairs = []
+            for result in aggregation_results:
+                trade_to = result["_id"]
+                count = result["count"]
+                paths = graph_manager.find_trade_path(target, trade_to, max_depth=3)
+                recommended_rate = 0.0
+                if paths:
+                    recommended_rate = graph_manager.calculate_recommand_rate(paths)
+                historical_rates = result.get("rates", [])
+                historical_avg = sum(historical_rates) / len(historical_rates) if historical_rates else 0.0
+                rate_stats = {
+                    "recommended_rate": recommended_rate,
+                    "historical_average": historical_avg,
+                    "historical_min": min(historical_rates) if historical_rates else 0.0,
+                    "historical_max": max(historical_rates) if historical_rates else 0.0,
+                    "path_count": len(paths)
+                }
+                trade_pair = {
+                    "trade_to": trade_to,
+                    "count": count,
+                    "recommend_rate": recommended_rate,
+                    "rate_statistics": rate_stats
+                }
+                trade_pairs.append(trade_pair)
             return {
-                "error": f"物品 '{target}' 不存在於交易圖中",
                 "target_item": target,
-                "trade_pairs": []
+                "total_trading_pairs": len(trade_pairs),
+                "trade_pairs": trade_pairs
             }
-        target_collection = db[target]
-        pipeline = [
-            {"$group": {"_id": {"$cond": [ {"$eq": ["$item_a", target]}, "$item_b", "$item_a"]}, "count": {"$sum": 1}, "rates": {"$push": {"$cond": [ {"$eq": ["$item_a", target]}, {"$divide": ["$quantity_b", "$quantity_a"]}, {"$divide": ["$quantity_a", "$quantity_b"]} ]}, }, "timestamps": {"$push": "$timestamp"} }},
-            {"$match": {"_id": {"$ne": None}}},
-            {"$sort": {"count": -1}},
-        ]
-        if limit > 0:
-            pipeline.append({"$limit": limit})
-        
-        cursor = target_collection.aggregate(pipeline)
-        aggregation_results = await cursor.to_list(length=None)
-        trade_pairs = []
-        for result in aggregation_results:
-            trade_to = result["_id"]
-            count = result["count"]
-            paths = graph_manager.find_trade_path(target, trade_to, max_depth=3)
-            recommended_rate = 0.0
-            if paths:
-                recommended_rate = graph_manager.calculate_recommand_rate(paths)
-            historical_rates = result.get("rates", [])
-            historical_avg = sum(historical_rates) / len(historical_rates) if historical_rates else 0.0
-            rate_stats = {
-                "recommended_rate": recommended_rate,
-                "historical_average": historical_avg,
-                "historical_min": min(historical_rates) if historical_rates else 0.0,
-                "historical_max": max(historical_rates) if historical_rates else 0.0,
-                "path_count": len(paths)
+        else:
+            # 不指定 target，統計所有物品
+            trade_history_collection = db["Trade-History"]
+            pipeline = [
+                {"$group": {
+                    "_id": "$item_a",
+                    "count": {"$sum": 1},
+                    "rates": {"$push": {"$divide": ["$quantity_b", "$quantity_a"]}},
+                    "timestamps": {"$push": "$timestamp"}
+                }},
+                {"$match": {"_id": {"$ne": None}}},
+                {"$sort": {"count": -1}},
+            ]
+            if limit > 0:
+                pipeline.append({"$limit": limit})
+            cursor = trade_history_collection.aggregate(pipeline)
+            aggregation_results = await cursor.to_list(length=None)
+            trade_pairs = []
+            for result in aggregation_results:
+                item = result["_id"]
+                count = result["count"]
+                historical_rates = result.get("rates", [])
+                historical_avg = sum(historical_rates) / len(historical_rates) if historical_rates else 0.0
+                rate_stats = {
+                    "historical_average": historical_avg,
+                    "historical_min": min(historical_rates) if historical_rates else 0.0,
+                    "historical_max": max(historical_rates) if historical_rates else 0.0
+                }
+                trade_pair = {
+                    "item": item,
+                    "count": count,
+                    "rate_statistics": rate_stats
+                }
+                trade_pairs.append(trade_pair)
+            return {
+                "total_items": len(trade_pairs),
+                "trade_pairs": trade_pairs
             }
-            trade_pair = {
-                "trade_to": trade_to,
-                "count": count,
-                "recommend_rate": recommended_rate,
-                "rate_statistics": rate_stats
-            }
-            trade_pairs.append(trade_pair)
-        return {
-            "target_item": target,
-            "total_trading_pairs": len(trade_pairs),
-            "trade_pairs": trade_pairs
-        }
     except Exception as e:
         return {
             "error": "無法取得最頻繁交易資料", 
