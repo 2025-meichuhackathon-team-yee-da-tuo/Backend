@@ -152,7 +152,7 @@ async def get_all_items():
         return {"error": "無法取得所有物品清單", "details": str(e)}
 
 @router.get("/most-freq-trade")
-async def get_most_frequent_trades(target: str, limit: int = 10):
+async def get_most_frequent_trades(target: str, limit: int = -1):
     try:
         db = await get_database()
         if target not in graph_manager.graph:
@@ -166,8 +166,10 @@ async def get_most_frequent_trades(target: str, limit: int = 10):
             {"$group": {"_id": {"$cond": [ {"$eq": ["$item_a", target]}, "$item_b", "$item_a"]}, "count": {"$sum": 1}, "rates": {"$push": {"$cond": [ {"$eq": ["$item_a", target]}, {"$divide": ["$quantity_b", "$quantity_a"]}, {"$divide": ["$quantity_a", "$quantity_b"]} ]}, }, "timestamps": {"$push": "$timestamp"} }},
             {"$match": {"_id": {"$ne": None}}},
             {"$sort": {"count": -1}},
-            {"$limit": limit}
         ]
+        if limit > 0:
+            pipeline.append({"$limit": limit})
+        
         cursor = target_collection.aggregate(pipeline)
         aggregation_results = await cursor.to_list(length=None)
         trade_pairs = []
