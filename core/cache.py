@@ -13,7 +13,7 @@ class CacheConfig:
     
     def __init__(
         self,
-        ttl: int = 300,  # 預設 5 分鐘
+        ttl: int = 300, 
         key_prefix: str = "",
         include_args: bool = True,
         include_kwargs: bool = True,
@@ -36,15 +36,15 @@ def generate_cache_key(
     """生成快取鍵"""
     key_parts = [config.key_prefix, func_name] if config.key_prefix else [func_name]
     
-    # 處理參數
+    
     if config.include_args and args:
-        # 排除 self 參數
+       
         filtered_args = args[1:] if args and hasattr(args[0], '__dict__') else args
         if filtered_args:
             key_parts.append(str(hash(str(filtered_args))))
     
     if config.include_kwargs and kwargs:
-        # 過濾排除的參數
+       
         filtered_kwargs = {
             k: v for k, v in kwargs.items() 
             if k not in config.exclude_params
@@ -85,20 +85,20 @@ def cache(
         
         @wraps(func)
         async def async_wrapper(*args, **kwargs):
-            # 檢查快取條件
+            
             if config.cache_condition and not config.cache_condition(*args, **kwargs):
                 return await func(*args, **kwargs)
             
-            # 生成快取鍵
+            
             cache_key = generate_cache_key(func.__name__, args, kwargs, config)
             
-            # 嘗試從快取取得
+            
             cached_result = await redis_client.get(cache_key)
             if cached_result is not None:
                 print(f"🎯 快取命中: {cache_key}")
                 return cached_result
             
-            # 執行函數並快取結果
+            
             print(f"💾 執行函數並快取: {cache_key}")
             result = await func(*args, **kwargs)
             
@@ -108,14 +108,14 @@ def cache(
         
         @wraps(func)
         def sync_wrapper(*args, **kwargs):
-            # 檢查快取條件
+            
             if config.cache_condition and not config.cache_condition(*args, **kwargs):
                 return func(*args, **kwargs)
             
-            # 生成快取鍵
+           
             cache_key = generate_cache_key(func.__name__, args, kwargs, config)
             
-            # 嘗試從快取取得（同步版本）
+         
             try:
                 import redis
                 r = redis.Redis.from_url(redis_client.redis_url, decode_responses=True)
@@ -129,11 +129,11 @@ def cache(
             except Exception as e:
                 print(f"同步快取讀取錯誤: {e}")
             
-            # 執行函數並快取結果
+           
             print(f"💾 執行函數並快取: {cache_key}")
             result = func(*args, **kwargs)
             
-            # 快取結果（同步版本）
+           
             try:
                 import redis
                 r = redis.Redis.from_url(redis_client.redis_url, decode_responses=True)
@@ -146,7 +146,7 @@ def cache(
             
             return result
         
-        # 根據函數是否為協程選擇包裝器
+     
         if inspect.iscoroutinefunction(func):
             return async_wrapper
         else:
@@ -182,7 +182,7 @@ def invalidate_cache(pattern: str = None, key: str = None):
         def sync_wrapper(*args, **kwargs):
             result = func(*args, **kwargs)
             
-            # 失效快取（同步版本）
+       
             try:
                 import redis
                 r = redis.Redis.from_url(redis_client.redis_url, decode_responses=True)
@@ -229,7 +229,7 @@ class CacheManager:
         keys = await redis_client.keys("*")
         return {
             "total_keys": len(keys),
-            "keys": keys[:10] if len(keys) > 10 else keys  # 只顯示前 10 個
+            "keys": keys[:10] if len(keys) > 10 else keys 
         }
     
     @staticmethod
@@ -247,7 +247,7 @@ class CacheManager:
                 print(f"❌ 預熱失敗: {func.__name__} - {e}")
         print("🔥 快取預熱完成")
 
-# 便利函數
+
 async def get_cached_or_set(
     key: str, 
     fetch_func: Callable, 
@@ -257,8 +257,7 @@ async def get_cached_or_set(
     cached_value = await redis_client.get(key)
     if cached_value is not None:
         return cached_value
-    
-    # 執行函數取得值
+
     if inspect.iscoroutinefunction(fetch_func):
         value = await fetch_func()
     else:

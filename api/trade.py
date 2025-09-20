@@ -17,7 +17,6 @@ async def new_trade(
     item_b: str,
     quantity_b: int
 ) -> Dict[str, Any]:
-    # ...existing code from main.py new_trade endpoint...
     user_b = "guess"
     trade_data = {
         "user_a": user_a,
@@ -53,30 +52,7 @@ async def new_trade(
         
         graph_manager.update_graph_from_trade(trade_data)
         return JSONResponse(status_code=status.HTTP_200_OK, content={"code": 1})
-        # return {
-        #     "message": "交易建立成功，已完成三個資料庫操作",
-        #     "trade_details": trade_data,
-        #     "operations_completed": {
-        #         "trade_history_id": str(history_result.inserted_id),
-        #         "item_a_collection_id": str(item_a_result.inserted_id),
-        #         "user_a_collection_id": str(user_a_result.inserted_id),
-        #         "swapped_data_id": str(swapped_result.inserted_id),
-        #         "user_b_collection_id": str(user_b_result.inserted_id)
-        #     },
-        #     "database_info": {
-        #         "database": "2025-MeiChu",
-        #         "collections_used": [
-        #             "Trade-History",
-        #             item_a
-        #         ]
-        #     }
-        # }
     except Exception as e:
-        # return {
-        #     "error": "資料庫操作失敗",
-        #     "details": str(e),
-        #     "trade_details": trade_data
-        # }
         return JSONResponse(status_code=status.HTTP_200_OK, content={"code": 0})
 
 @router.get("/")
@@ -165,7 +141,6 @@ async def get_most_frequent_trades(target: str = "", limit: int = -1):
     try:
         db = await get_database()
         if target:
-            # 指定 target，統計該物品
             if target not in graph_manager.graph:
                 return {
                     "error": f"物品 '{target}' 不存在於交易圖中",
@@ -212,7 +187,6 @@ async def get_most_frequent_trades(target: str = "", limit: int = -1):
                 "trade_pairs": trade_pairs
             }
         else:
-            # 不指定 target，統計所有物品
             trade_history_collection = db["Trade-History"]
             pipeline = [
                 {"$group": {
