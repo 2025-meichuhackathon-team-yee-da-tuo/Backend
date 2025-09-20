@@ -12,7 +12,7 @@ load_dotenv()
 from core.db import init_db
 from api.auth import router as auth_router
 from core.db import register_db_events
-from api.routes import router as api_router
+from api.trade import router as api_router
 
 app = FastAPI(
     title="Backend API",
@@ -29,7 +29,7 @@ app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
 register_db_events(app)
 
 # 掛載 API 路由
-app.include_router(api_router)
+app.include_router(api_router, prefix="/api/trade", tags=["Trading API"])
 
 # 如果直接執行此檔案，啟動服務器
 if __name__ == "__main__":
