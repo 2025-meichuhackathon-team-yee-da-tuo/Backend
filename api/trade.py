@@ -11,11 +11,11 @@ async def new_trade(
     user_a: str,
     item_a: str,
     quantity_a: int,
-    user_b: str,
     item_b: str,
     quantity_b: int
 ) -> Dict[str, Any]:
     # ...existing code from main.py new_trade endpoint...
+    user_b = "guess"
     trade_data = {
         "user_a": user_a,
         "item_a": item_a,
@@ -46,9 +46,7 @@ async def new_trade(
             "is_swapped": True,
             "original_trade_id": trade_data["trade_id"]
         })
-        swapped_result = await item_b_collection.insert_one(swapped_trade_data)
-        user_b_collection = db[user_b]
-        user_b_result = await user_b_collection.insert_one(swapped_trade_data)
+        
         graph_manager.update_graph_from_trade(trade_data)
         return JSONResponse(status_code=status.HTTP_200_OK, content={"code": 1})
         # return {
