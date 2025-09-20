@@ -105,6 +105,8 @@ def _fuzzy_search_core(query: str, items: List[str], top_k: int, min_score: floa
             break
         if float(sims[idx]) < min_score:
             continue
+        if query not in results:
+            results.insert(0, query)
         results.append(items[idx])
     return results
 
